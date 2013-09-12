@@ -1,2 +1,3 @@
 Communication
 iPhone Hot spot over USB to Debian PC with ipheth-utils installed. Can access Web Server on PC using assigned IP on "Apple iPhone" network.
+todo: try same setup on RPi
