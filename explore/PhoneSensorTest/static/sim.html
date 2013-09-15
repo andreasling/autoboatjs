@@ -1,0 +1,404 @@
+<html>
+<head>
+	<title></title>
+</head>
+<body>
+
+<canvas id="canvas" width="800" height="800" style="border: 1px solid; "></canvas>
+
+<script type="text/javascript">
+
+var target = {
+	position: {
+		x: 0.0,
+		y: 0.0
+	}
+};
+
+var route = [
+	{ x: -300, y: -300 },
+	{ x: 300, y: -300 },
+	{ x: -300, y: 300 },
+	{ x: 300, y: 300 },
+];
+
+var cr = 0;
+
+var vehicle = {
+	position: {
+		x: 0.0,
+		y: 0.0
+	},
+	velocity: {
+		x: 0.0,
+		y: 0.0
+	},
+	mass: 1.0,
+	heading: 0,
+	speed: 0,
+	steerAngle: 0,
+	wheelBase: 25
+};
+
+var o = vehicle;
+
+var positions = [];
+var bpositions = [];
+var fpositions = [];
+
+var t_0 = new Date().getTime();
+var t_prev = new Date().getTime();
+
+function redraw(context, o, a) {
+
+	context.clearRect(-context.canvas.width/2, -context.canvas.height/2, context.canvas.width, context.canvas.height);
+
+	var drawPosition = {
+		x: o.position.x, // % context.canvas.width,
+		y: o.position.y //% context.canvas.height
+	};
+
+	positions.push(drawPosition);
+	if (positions.length > 10000) {
+		positions.shift();
+	};
+
+	context.beginPath();
+	context.moveTo(-50, 0);
+	context.lineTo(50, 0);
+	context.moveTo(0, -50);
+	context.lineTo(0, 50);
+	context.strokeStyle="#00ffff";
+	context.stroke();
+
+	context.beginPath();
+	for (var i = 0; i < route.length; i++) {
+		var r = route[i];
+		context.moveTo(r.x - 5, r.y);
+		context.lineTo(r.x + 5, r.y);
+		context.moveTo(r.x, r.y - 5.5);
+		context.lineTo(r.x, r.y + 4.5);
+	};
+	context.strokeStyle="#0000ff";
+	context.stroke();
+
+	var crp = route[cr];
+	context.beginPath();
+	context.arc(crp.x, crp.y, 5, 0, 2*Math.PI);
+	context.closePath();
+	context.strokeStyle="#ff0000";
+	context.stroke();
+
+	context.beginPath();
+	context.moveTo(positions[0].x, positions[0].y);
+	for (var i = 0; i < positions.length; i++) {
+		var p = positions[i]
+		context.lineTo(p.x, p.y);
+	};
+	context.strokeStyle="#808080";
+	context.stroke();
+
+	context.beginPath();
+	context.moveTo(drawPosition.x, drawPosition.y);
+	context.lineTo(drawPosition.x + o.velocity.x, drawPosition.y + o.velocity.y);
+	context.strokeStyle="#0000ff";
+	context.stroke();
+
+	context.beginPath();
+	context.moveTo(drawPosition.x, drawPosition.y);
+	context.lineTo(drawPosition.x + a.x * 10, drawPosition.y + a.y * 10);
+	context.strokeStyle="#ff0000";
+	context.stroke();
+
+	context.beginPath();
+	context.arc(drawPosition.x, drawPosition.y, 5, 0, 2*Math.PI);
+	context.closePath();
+	context.strokeStyle="#000000";
+	context.stroke();
+
+	var headingVector = {
+		x: Math.cos(o.heading), 
+		y: Math.sin(o.heading)
+	};
+
+	var steeringVector = {
+		x: Math.cos(o.heading + o.steerAngle), 
+		y: Math.sin(o.heading + o.steerAngle)
+	};
+
+	var wheelVector = {
+		x: o.wheelBase/2 * headingVector.x,
+		y: o.wheelBase/2 * headingVector.y
+	};
+
+	var backWheelPosition = {
+		x: drawPosition.x - wheelVector.x,
+		y: drawPosition.y - wheelVector.y
+	};
+
+	var frontWheelPosition = {
+		x: drawPosition.x + wheelVector.x,
+		y: drawPosition.y + wheelVector.y
+	};
+
+	bpositions.push(backWheelPosition);
+	if (bpositions.length > 100) {
+		bpositions.shift();
+	};
+	fpositions.push(frontWheelPosition);
+	if (fpositions.length > 100) {
+		fpositions.shift();
+	};
+
+	context.beginPath();
+	context.moveTo(bpositions[0].x, bpositions[0].y);
+	for (var i = 0; i < bpositions.length; i++) {
+		var p = bpositions[i]
+		context.lineTo(p.x, p.y);
+	};
+	context.strokeStyle="#e0e0e0";
+	context.stroke();
+
+	context.beginPath();
+	context.moveTo(fpositions[0].x, fpositions[0].y);
+	for (var i = 0; i < fpositions.length; i++) {
+		var p = fpositions[i]
+		context.lineTo(p.x, p.y);
+	};
+	context.strokeStyle="#e0e0e0";
+	context.stroke();
+
+	context.beginPath();
+	context.moveTo(backWheelPosition.x, backWheelPosition.y);
+	context.lineTo(frontWheelPosition.x, frontWheelPosition.y);
+	context.strokeStyle="#808080";
+	context.stroke();
+
+	context.beginPath();
+	context.moveTo(backWheelPosition.x - headingVector.x * 2, backWheelPosition.y - headingVector.y * 2);
+	context.lineTo(backWheelPosition.x + headingVector.x * 2, backWheelPosition.y + headingVector.y * 2);
+	context.moveTo(frontWheelPosition.x - steeringVector.x * 2, frontWheelPosition.y - steeringVector.y * 2);
+	context.lineTo(frontWheelPosition.x + steeringVector.x * 2, frontWheelPosition.y + steeringVector.y * 2);
+	context.strokeStyle="#000000";
+	context.stroke();
+};
+
+function animate(context) {
+	var t = new Date().getTime();
+	var dt = (t - t_prev) / 1000.0 * 10.0;
+
+	if (!Key.isDown(Key.ESC)) {
+		requestAnimationFrame(function() {
+			animate(context);
+		});
+	}
+
+	//positions.push(o.position);
+
+	/* var dot = {
+		x: o.position.x - target.position.x,
+		y: o.position.y - target.position.y,
+	};
+
+	var lot = Math.sqrt(dot.x * dot.x + dot.y * dot.y);
+
+	var vot = {
+		x: dot.x / lot,
+		y: dot.y / lot
+	};
+
+	var acceleration = {
+		x: -vot.x, //o.force.x / o.mass,
+		y: -vot.y //o.force.y / o.mass
+	}; */
+
+	var acceleration = {
+		x: 0,
+		y: 0
+	};
+
+	/* var dt22 = dt * dt / 2.0;
+
+	o.position.x += o.velocity.x * dt + acceleration.x * dt22;
+	o.position.y += o.velocity.y * dt + acceleration.y * dt22;
+
+	o.velocity.x += acceleration.x * dt;
+	o.velocity.y += acceleration.y * dt; */
+
+
+	var headingVector = {
+		x: Math.cos(o.heading), 
+		y: Math.sin(o.heading)
+	};
+
+	var steeringVector = {
+		x: Math.cos(o.heading + o.steerAngle), 
+		y: Math.sin(o.heading + o.steerAngle)
+	};
+
+	var wheelVector = {
+		x: o.wheelBase/2 * headingVector.x,
+		y: o.wheelBase/2 * headingVector.y
+	};
+
+	var backWheelPosition = {
+		x: o.position.x - wheelVector.x + o.speed * dt * headingVector.x,
+		y: o.position.y - wheelVector.y + o.speed * dt * headingVector.y
+	};
+
+	var frontWheelPosition = {
+		x: o.position.x + wheelVector.x + o.speed * dt * steeringVector.x,
+		y: o.position.y + wheelVector.y + o.speed * dt * steeringVector.y
+	};
+
+	o.position.x = (frontWheelPosition.x + backWheelPosition.x) / 2;
+	o.position.y = (frontWheelPosition.y + backWheelPosition.y) / 2;
+
+	o.heading = Math.atan2(frontWheelPosition.y - backWheelPosition.y, frontWheelPosition.x - backWheelPosition.x);
+
+	/* if (o.position.x > context.canvas.width) 
+		o.position.x = 0;
+
+	if (o.position.x < 0) 
+		o.position.x = context.canvas.width;
+
+	if (o.position.y > context.canvas.height) 
+		o.position.y = 0;
+
+	if (o.position.y < 0) 
+		o.position.y = context.canvas.height; */
+
+	redraw(context, o, acceleration);
+
+	if (Key.isDown(Key.UP) && o.speed < 10)
+		o.speed += 0.1;
+	if (Key.isDown(Key.DOWN) && o.speed > -2)
+		o.speed -= 0.1;
+	if (!Key.isDown(Key.UP) && !Key.isDown(Key.DOWN) && o.speed != 0)
+		o.speed -= (o.speed > 0 ? 0.1 : -0.1);
+
+	if (Key.isDown(Key.LEFT) && o.steerAngle > -Math.PI / 4)
+		o.steerAngle -= Math.PI / 10;
+	if (Key.isDown(Key.RIGHT) && o.steerAngle < Math.PI / 4)
+		o.steerAngle += Math.PI / 10;
+	if (!Key.isDown(Key.LEFT) && !Key.isDown(Key.RIGHT) && o.steerAngle != 0)
+		o.steerAngle -= (o.steerAngle > 0 ? (Math.PI / 40 ): -(Math.PI / 40));
+
+	t_prev = t;
+};
+
+/* (function() {
+	var context = document.getElementById("canvas1").getContext("2d");
+	setInterval(function() { 
+		redraw(context, y1); 
+		y1 = (y1 + 1) % 500;
+	}, 17);
+})(); */
+
+var Key = {
+  _pressed: {},
+
+  LEFT: 37,
+  UP: 38,
+  RIGHT: 39,
+  DOWN: 40,
+  ESC: 27,
+  
+  isDown: function(keyCode) {
+    return this._pressed[keyCode];
+  },
+  
+  onKeydown: function(event) {
+  	//console.log(event.keyCode);
+    this._pressed[event.keyCode] = true;
+  },
+  
+  onKeyup: function(event) {
+    delete this._pressed[event.keyCode];
+  }
+};
+
+window.addEventListener('keyup', function(event) { Key.onKeyup(event); }, false);
+window.addEventListener('keydown', function(event) { Key.onKeydown(event); }, false);
+
+document.getElementById("canvas").onclick = function (event) {
+	route.push({x:event.x-400,y:event.y-400});
+};
+
+(function init() {
+
+	var context = document.getElementById("canvas").getContext("2d");
+
+	context.translate(context.canvas.width / 2 - .5, context.canvas.height / 2 - .5);
+
+	animate(context);
+
+	setInterval(function() {
+
+		var ks = [];
+		ks[Key.UP] = false;
+		ks[Key.DOWN] = false;
+		ks[Key.RIGHT] = false;
+		ks[Key.LEFT] = false;
+
+		var ct = route[cr];
+		var dtv = {
+			x: ct.x - o.position.x,
+			y: ct.y - o.position.y
+		};
+
+		var dtl = Math.sqrt(dtv.x * dtv.x + dtv.y * dtv.y);
+
+		if (dtl > 25) {
+
+			ks[Key.UP] = true;
+
+			var dta = Math.atan2(dtv.y, dtv.x);
+
+			var da = o.heading - dta;
+
+			while (da > Math.PI) {
+				da -= 2*Math.PI;
+			};
+
+			while (da < -Math.PI) {
+				da += 2*Math.PI;
+			};
+
+			//if (da > 0 || da < -(2 * Math.PI / 4)) /*Math.PI / 10 || da < -Math.PI / 2)*/ {
+			//	ks[Key.LEFT] = true;
+			//} else if (da < 0) /*-Math.PI / 10) */ {
+			//	ks[Key.RIGHT] = true;
+			//}
+			var sa = -(
+				da > Math.PI / 4 
+				? Math.PI / 4 
+				: 
+				da < -Math.PI / 4 
+				? -Math.PI / 4 
+				: da);
+
+			if (o.steerAngle > sa) {
+				o.steerAngle -= Math.PI / 10;
+			} else if (o.steerAngle < sa) {
+				o.steerAngle += Math.PI / 10;
+			};
+
+		} else {
+			cr = (cr+1)%route.length;
+		}
+
+		for (var kc in ks) {
+			if (ks[kc])
+				Key.onKeydown({keyCode:kc});
+			else
+				Key.onKeyup({keyCode:kc});
+		}
+
+	}, 25);
+})();
+
+</script>
+
+</body>
+</html>

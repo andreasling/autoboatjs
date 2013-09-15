@@ -1,0 +1,41 @@
+notes.txt
+
+analys av data från 2013-08-31 20:00
+datainsamlingen skedde under gång från lägenheten via "vanliga vägen" till ica, där jag handlade, och sedan gick tillbaka via "vägen under tunnelbanebron". klickade user event några gånger under tiden.
+startade i lägenheten. 
+gick ut ur lägenhetern. 
+tog hissen ner. 
+gick ut ur huset.
+(user event?)
+gick över parkeringen.
+(user event i hörnet av parkeringen mot gångvägens t-korsning)
+upp för backen
+(user event)
+in mot centrum
+(user event)
+in i ica butiken
+handlade
+ut ur ica butiken
+(user event?)
+ner för de djupa trappstegen
+under broarna
+(user event mellan broarna?)
+tillbaka mot lägenheten
+(user event på vägen?)
+in i huset
+hissen upp
+in i lägenheten
+stopp
+
+pingtider
+ser ut att ligga på ca 0.1 - 0.2 s normalt, ibland runt 0.7 - 1.3 s, men kan komma upp i 10 - 11 s i extremfall. Verkar vara när man återfår kontakt med nätverket efter att inte haft det ett tag och de anrop som inte nått timeout skickas som de höga tiderna uppstår, då det kommer ett antal höga men dalande tider på raden och tidpunkterna på dessa kommer efter ett långt uppehåll (se datapunkter efter 1018 s).
+beräknad differens mellan klockorna i klienten och servern i stämmer inom 1 - 2 s med den verkliga. beräknade tidpunkten mitt mellan att klienten skickade ping och mottog svar och jämförde denna med serverns tidpunkt. fick en uppskattad differens på lite drygt 11 s, och vid jämförelse av klockorna var skillnaden cs 12 s.
+todo: synkronisera klockorna, alt ta fram mer exakt skillnad. mät om det är skillnad i tider mellan klient -> server och server -> klient som förklarar skillnade på beräknad diff och verklig diff.
+todo: behövs en funktion för klocksynkronisering för att öka noggranheten? kan den köras en gång, eller måste den ske kontinuerligt?
+
+location
+https://www.google.com/fusiontables/DataSource?docid=10J5RWMNrtquqK2ICnBEc7XEH8NIswVt_8SHoMvc
+skillnad i tid mellan att eventhanteraren startar och eventets timestamp (alltså tiden från att positionen har mätts till dess att eventhanteraren får det) ligger normalt (97%) under 0.1 s, i ett fåtal fall över 100 ms (3%) och enstaka fall över 1 s (0.1%, 1 fall i testdatan).
+todo: kolla om de höga tiderna verkar bero på belastning, dålig mottagning eller liknande
+
+todo: kommer total tid från mätning till att styrsignalen ger utslag vara så stor att den behöver tas med i beräkningarna, och går det i s f använda ett fast värde, eller måste det justeras kontinuerligt? hanterar PID det?

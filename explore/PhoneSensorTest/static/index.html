@@ -1,0 +1,226 @@
+<html>
+<head>
+	<meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0;"/>
+	<title></title>
+</head>
+<body>
+	<button id="user-event">user event</button>
+	<button id="send">send</button>
+	<pre id="gps"></pre>
+	<pre id="compass"></pre>
+	<pre id="progress"></pre>
+	<pre id="log"></pre>
+	<button id="stop">stop</button>
+	<input type="button" id="wssend" value="send">
+	<input type="text" id="message">
+	<div id="chatlog"></div>
+	<script type="text/javascript">
+(function() {
+
+/* todo: 
+	web socket ping
+	xhr vs ws latency
+*/
+
+	try {
+		window.WebSocket = window.WebSocket || window.MozWebSocket;
+		var ws = new WebSocket("ws://192.168.0.8:1337", "echo-protocol");
+
+		function sendMessage() {
+			//alert("sending...");
+			try	{
+				console.log("sendMessage");
+				var message = document.getElementById("message").value;
+				ws.send(new Date().getTime());
+			} catch (error) {
+				//alert("send message error: " + error);
+			};
+		};
+
+		ws.addEventListener("message", function(e) {
+			var msg = e.data;
+			document.getElementById("chatlog").innerHTML += "<br>" + msg + ", " + new Date().getTime();
+		});
+
+		document.getElementById("wssend").onclick = sendMessage;
+	} catch (error) {
+		alert("web socket error: " + error);
+	};
+
+	var queue = [];
+
+	queue.push({timestamp:new Date().getTime(), type: "loaded", data: {
+		userAgent: navigator.userAgent
+	}});
+
+	function sendToApi(id, data) {
+		try {
+			var xhr = new XMLHttpRequest();
+			xhr.open("POST","api/data/" + id, true);
+			xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+			xhr.send(JSON.stringify(data));
+		}
+		catch (error) {
+			alert(error);
+		}
+	};
+
+	function pingServer() {
+		try {
+			var ts0 = new Date().getTime();
+			var xhr = new XMLHttpRequest();
+			/* xhr.onreadystatechange = function() {
+				var ts = new Date().getTime();
+
+				if (xhr.readyState == 4) {
+					var ed;
+					if (xhr.status == 200)
+						ed = JSON.parse(xhr.responseText);
+					else {
+						console.log("error: " + xhr.status);
+						ed = { error: xhr.status };
+					}
+
+					queue.push({ timestamp: ts, type: "ping", data: ed});
+				}
+			}; */
+
+			xhr.onload = function(e){
+
+				var ts = new Date().getTime();
+
+				var rawData = JSON.parse(e.srcElement.responseText);
+
+				queue.push({
+					timestamp: ts,
+					eventTimestamp: e.timeStamp,
+					type: "ping",
+					data: {
+						requestTimestamp: rawData.requestData.timestamp,
+						responseTimestamp: rawData.timestamp,
+						remoteAddress: rawData.remoteAddress,
+						localAddress: rawData.localAddress
+					}
+				});
+			};
+
+			xhr.onerror = function(e){
+				queue.push({
+					timestamp: new Date().getTime(),
+					eventTimestamp: e.timeStamp,
+					type: "ping",
+					data: "error"
+				});
+			};
+
+			xhr.open("POST","api/ping", true);
+			xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+			xhr.send(JSON.stringify({timestamp:ts0}));
+		}
+		catch (error) {
+			alert(error);
+		}
+	};
+
+	var log = document.getElementById("log");
+	var progress = document.getElementById("progress");
+	var gps = document.getElementById("gps");
+	var compass = document.getElementById("compass");
+	log.innerHTML = "begin\n";
+
+	var watchId = navigator.geolocation.watchPosition(function(location) { 
+		console.log(location);
+		var ts = new Date().getTime();
+		queue.push({ 
+			timestamp: ts, 
+			eventTimestamp: location.timestamp,
+			type: "location", 
+			data: location 
+		});
+
+		gps.innerHTML = JSON.stringify(location, undefined, 2);
+	}, null, { enableHighAccuray: true });
+
+
+	var lastCompassHeading = null;
+	function deviceorientationHandler(e) {
+    	var ts = new Date().getTime();
+    	
+    	var compassHeading = e.webkitCompassHeading;
+    	
+    	/*if (compassHeading != lastCompassHeading)*/ {
+    		lastCompassHeading = compassHeading;
+
+    		queue.push({
+    			timestamp: ts, 
+    			eventTimestamp: e.timeStamp,
+    			type: "orientation", 
+    			data: { 
+    				compassHeading: compassHeading,
+					alpha: event.alpha,
+					beta: event.beta,
+					gamma: event.gamma
+    			}
+    		});
+
+    		compass.innerHTML = "heading: " + compassHeading;
+    	}
+	};
+	window.ondeviceorientation = deviceorientationHandler;
+	//window.addEventListener("deviceorientation", devicemotionHandler, false);
+
+	function devicemotionHandler(e) {
+    	var ts = new Date().getTime();
+
+    	queue.push({
+    		timestamp: ts, 
+    		eventTimestamp: e.timeStamp,
+    		type: "motion", 
+    		data: {
+				accelerationIncludingGravity: event.accelerationIncludingGravity,
+				acceleration: event.acceleration
+			}
+    	});
+	};
+	window.ondevicemotion = devicemotionHandler;
+
+	document.getElementById("user-event").onclick = function() {
+		var ts = new Date().getTime();
+		queue.push({ timestamp: ts, type: "user event", data: null });
+	};
+
+	document.getElementById("send").onclick = function() {
+		if (queue.length != 0) {
+			sendToApi("temp", queue);
+			queue.length = 0;
+		}
+	};
+
+	document.getElementById("stop").onclick = function() {
+		navigator.geolocation.clearWatch(watchId);
+		window.ondeviceorientation = null;
+		window.ondevicemotion = null;
+		clearInterval(intervalId);
+	};
+
+	log.innerHTML += "added watch\n";
+
+	var intervalId = setInterval(function(){
+
+		progress.innerHTML = "log size: " + queue.length;
+
+		/* if (queue.length != 0) {
+			sendToApi("temp", { q: queue });
+			queue.length = 0;
+		} */
+
+		pingServer();
+
+	},1000);
+
+
+	log.innerHTML += "end\n";
+})();
+	</script>
+</body>
+</html>
