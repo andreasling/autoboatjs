@@ -237,37 +237,38 @@ function tick() {
 
 	var dtl = Math.sqrt(dtv.x * dtv.x + dtv.y * dtv.y);
 
-	if (dtl > 25) {
-		diagnostics.dtv = dtv;
-		diagnostics.dtl = dtl;
+	diagnostics.dtv = dtv;
+	diagnostics.dtl = dtl;
 
-		var dta = Math.atan2(dtv.y, dtv.x);
-
-		var da = dta - o.heading;
-
-		const PIx2 = 2 * Math.PI;
-		const maxSteer = Math.PI / 4;
-		const minSteer = -maxSteer;
-
-		da %= PIx2;
-		if (da > Math.PI) 
-			da -= PIx2;
-		else if (da <= -Math.PI)
-			da += PIx2;
-
-		var sa = da > 0 ? Math.min(da, maxSteer) : Math.max(da, minSteer);
-
-		controls.speed = 10;
-		controls.steerAngle = sa;
-
-
-		diagnostics.heading = o.heading;
-		diagnostics.dta = dta;
-		diagnostics.da = da;
-		diagnostics.sa = sa;
-	} else {
+	if (dtl < 25) {
 		cr = (cr+1)%route.length;
+		return;
 	}
+
+	var dta = Math.atan2(dtv.y, dtv.x);
+
+	var da = dta - o.heading;
+
+	const PIx2 = 2 * Math.PI;
+	const maxSteer = Math.PI / 4;
+	const minSteer = -maxSteer;
+
+	da %= PIx2;
+	if (da > Math.PI) 
+		da -= PIx2;
+	else if (da <= -Math.PI)
+		da += PIx2;
+
+	var sa = da > 0 ? Math.min(da, maxSteer) : Math.max(da, minSteer);
+
+	controls.speed = 10;
+	controls.steerAngle = sa;
+
+
+	diagnostics.heading = o.heading;
+	diagnostics.dta = dta;
+	diagnostics.da = da;
+	diagnostics.sa = sa;
 };
 
 	return {
