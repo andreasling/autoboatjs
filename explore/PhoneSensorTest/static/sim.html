@@ -245,13 +245,17 @@ function tick() {
 
 		var da = dta - o.heading;
 
-		da %= 2 * Math.PI;
-		if (da > Math.PI) 
-			da -= 2 * Math.PI;
-		else if (da <= -Math.PI)
-			da += 2 * Math.PI;
+		const PIx2 = 2 * Math.PI;
+		const maxSteer = Math.PI / 4;
+		const minSteer = -maxSteer;
 
-		var sa = da > 0 ? Math.min(da, Math.PI / 4) : Math.max(da, -Math.PI / 4);
+		da %= PIx2;
+		if (da > Math.PI) 
+			da -= PIx2;
+		else if (da <= -Math.PI)
+			da += PIx2;
+
+		var sa = da > 0 ? Math.min(da, maxSteer) : Math.max(da, minSteer);
 
 		controls.speed = 10;
 		controls.steerAngle = sa;
