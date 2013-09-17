@@ -245,7 +245,11 @@ function tick() {
 
 		var da = dta - o.heading;
 
-		da %= (2 * Math.PI);
+		da %= 2 * Math.PI;
+		if (da > Math.PI) 
+			da -= 2 * Math.PI;
+		else if (da <= -Math.PI)
+			da += 2 * Math.PI;
 
 		var sa = da > 0 ? Math.min(da, Math.PI / 4) : Math.max(da, -Math.PI / 4);
 
