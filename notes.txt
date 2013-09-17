@@ -1,5 +1,89 @@
+race
+time: TBD (2014 vacation times)
+place: TDB, probably Klubbholmen
+rules:
+1. home made hull, max 1 m long
+2. electrical drive
+3. max 4 lipo batteries
+
+main idea
+hull, motors and rc control according to rules
+  brushless motors
+  electric speed control
+  servo steering
+  lipo batteries
+  look into hull design
+  drive shaft + propeller, water jet, ..?
+autopilot
+  gps guided autopilot
+  rpi/arduino as "brain"
+  iphone/other smartphone/device for sensors
+  wired or wireless communication
+  brain in boat or on land (wifi range?)
+  main software platform: html5/js + nodejs
+  "brain" runs nodejs server
+  sensor device loads html/js from "brain" and reports sensor data back
+  use web sockets (or webrtc) to communicate
+
 Communication
+http/web sockets over tcp/ip over usb or wifi
 iPhone Hot spot over USB to Debian PC with ipheth-utils installed. Can access Web Server on PC using assigned IP on "Apple iPhone" network.
 todo: try same setup on RPi
+todo: measure latency
 
+positioning
+todo: measure accuracy, latency
+
+power
+4x lipo
+todo: how to drive rpi? dc/dc from lipo?
+
+boat hull
+water proof container for electronics
+windows for iphone display to show status / diagnostics
+red/yellow/green led to show state (pimp: cylon like sweeping light)
+
+manual control
+todo: get new rc control (or complement old with esc)
+
+autopilot
+route
+route planner (next point)
+ideal route, way points / gates, estimate movement / plan ahead to e.g. avoid running in to red area (ai, search algorithm + state space)
+red/yellow/green areas
+position & heading: gps + compass
+auto calibration (straight line, max steering angle, "reaction times", et c)
+route/map editor (or automatic?)
+todo: measure if web workers increase performance
+todo: look into PID controllers
 todo: consider running autopilot on phone. Latency in sensor data vs control signals.
+
+safety
+red/yellow/green state
+red - danger - stop and wait for manual control
+yellow - risky - run slower return to green state
+green - safe - run as normal
+kill switch/manual override
+sanity checks: detect poor gps accuracy, sensor data inconsistencies, high fluctuations, ...
+distance sensor, touch sensor?
+"bumpers"
+
+simulator
+  physics engine? box2d, coffee physics, ... or simple home rolled
+  environment / world
+  generate sensor data from virtual environment
+  account for accuracy
+
+development mile stones
+
+simulation
+  simple physics
+  visualization: html5 canvas / webgl
+  simulated gps positioning (mock geolocation api)
+  basic autopilot algoritms
+
+proof of concept
+  lego robot car that can navigate on land, e.g. around know path
+
+implementation
+  boat
