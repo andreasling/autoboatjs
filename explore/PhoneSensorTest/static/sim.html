@@ -184,39 +184,47 @@ function simulator(autopilot) {
 
 		o.heading = Math.atan2(frontWheelPosition.y - backWheelPosition.y, frontWheelPosition.x - backWheelPosition.x);
 
+		var maxSpeed = 10;
+		var minSpeed = -2;
+		var acceleration = 0.1;
+		var maxSteerAngle = Math.PI / 4;
+		var minSteerAngle = -maxSteerAngle;
+		var steerAngleSpeed = Math.PI / 40;
+
+		var targetSpeed = 0;
+		var targetSteerAngle = 0;
+
 		if (autopilot) {
-			var aps = autopilot.getCurrentSpeed();
-			if (!aps && o.speed != 0)
-				o.speed -= (o.speed > 0 ? 0.1 : -0.1);
-			else if (aps > o.speed && o.speed < 10)
-				o.speed += 0.1;
-			else if (aps < o.speed && o.speed > -2)
-				o.speed -= 0.1;
-
-			var apst = autopilot.getCurrentSteerAngle();
-			if (!apst && o.steerAngle != 0)
-				o.steerAngle -= (o.steerAngle > 0 ? (Math.PI / 40 ): -(Math.PI / 40));
-			else if (apst < o.steerAngle && o.steerAngle > -Math.PI / 4)
-				o.steerAngle -= Math.PI / 10;
-			else if (apst > o.steerAngle && o.steerAngle < Math.PI / 4)
-				o.steerAngle += Math.PI / 10;
-
-		} else {
-			if (Key.isDown(Key.UP) && o.speed < 10)
-				o.speed += 0.1;
-			if (Key.isDown(Key.DOWN) && o.speed > -2)
-				o.speed -= 0.1;
-			if (!Key.isDown(Key.UP) && !Key.isDown(Key.DOWN) && o.speed != 0)
-				o.speed -= (o.speed > 0 ? 0.1 : -0.1);
-
-			if (Key.isDown(Key.LEFT) && o.steerAngle > -Math.PI / 4)
-				o.steerAngle -= Math.PI / 10;
-			if (Key.isDown(Key.RIGHT) && o.steerAngle < Math.PI / 4)
-				o.steerAngle += Math.PI / 10;
-			if (!Key.isDown(Key.LEFT) && !Key.isDown(Key.RIGHT) && o.steerAngle != 0)
-				o.steerAngle -= (o.steerAngle > 0 ? (Math.PI / 40 ): -(Math.PI / 40));
+			targetSpeed = autopilot.getCurrentSpeed() || 0;
+			targetSteerAngle = autopilot.getCurrentSteerAngle() || 0;
 		}
 
+		/* if (manual) */ {
+			if (Key.isDown(Key.UP) && Key.isDown(Key.DOWN))
+				targetSpeed = 0;
+			else if (Key.isDown(Key.UP))
+				targetSpeed = maxSpeed;
+			else if (Key.isDown(Key.DOWN))
+				targetSpeed = minSpeed;
+
+			if (Key.isDown(Key.LEFT) && Key.isDown(Key.RIGHT))
+				targetSteerAngle = 0;
+			else if (Key.isDown(Key.LEFT))
+				targetSteerAngle = minSteerAngle;
+			else if (Key.isDown(Key.RIGHT))
+				targetSteerAngle = maxSteerAngle;
+		}
+
+		if (targetSpeed > o.speed && o.speed < maxSpeed)
+			o.speed = Math.min(o.speed + acceleration, maxSpeed, targetSpeed);
+		else if (targetSpeed < o.speed && o.speed > minSpeed)
+			o.speed = Math.max(o.speed - acceleration, minSpeed, targetSpeed);
+
+		if (targetSteerAngle < o.steerAngle && o.steerAngle > minSteerAngle)
+			o.steerAngle = Math.max(o.steerAngle - steerAngleSpeed, minSteerAngle, targetSteerAngle);
+		else if (targetSteerAngle > o.steerAngle && o.steerAngle < maxSteerAngle)
+			o.steerAngle = Math.min(o.steerAngle + steerAngleSpeed, maxSteerAngle, targetSteerAngle);
+		
 		t_prev = t;
 	};
 
