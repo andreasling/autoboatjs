@@ -50,9 +50,6 @@ var positions = [];
 var bpositions = [];
 var fpositions = [];
 
-var t_0 = new Date().getTime();
-var t_prev = new Date().getTime();
-
 function Positioner() {
 
 	return { 
@@ -125,6 +122,8 @@ function animate(context) {
 };
 
 function simulator(autopilot) {
+
+	var t_prev = new Date().getTime();
 
 	function tick() {
 		var t = new Date().getTime();
