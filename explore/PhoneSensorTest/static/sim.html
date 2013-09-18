@@ -26,7 +26,6 @@ var route = [
 	{x:-50,y:0}
 
 ];
-var cr = 0;
 
 var vehicle = {
 	position: {
@@ -57,9 +56,35 @@ function Positioner() {
 			return o.position;
 		}
 	};
-}
+};
 
-function Autopilot(positioner) {
+function Router(routePoints, positioner) {
+	var currentPointIndex = 0;
+
+	return {
+		getCurrentTarget: function() {
+
+			var position = positioner.getCurrentPosition();
+
+			for (; currentPointIndex < routePoints.length; currentPointIndex++) {
+				var target = routePoints[currentPointIndex];
+
+				var dx = position.x - target.x,
+					dy = position.y - target.y, 
+					l = Math.sqrt(dx*dx + dy*dy);
+
+				if (l > 25) break;
+			};
+
+			if (currentPointIndex >= routePoints.length)
+				return null;
+
+			return route[currentPointIndex];
+		}
+	};
+};
+
+function Autopilot(positioner, router) {
 
 	var controls = {
 		speed: 0,
@@ -74,18 +99,18 @@ function Autopilot(positioner) {
 
 		var position = positioner.getCurrentPosition();
 
-		var ct = route[cr];
+		var ct = router.getCurrentTarget();
+
+		if (!ct) {
+			controls.speed = 0;
+			controls.steerAngle = 0;
+			return;
+		};
+
 		var dtv = {
 			x: ct.x - position.x,
 			y: ct.y - position.y
 		};
-
-		var dtl = Math.sqrt(dtv.x * dtv.x + dtv.y * dtv.y);
-
-		if (dtl < 25) {
-			cr = (cr+1)%route.length;
-			return;
-		}
 
 		var dta = Math.atan2(dtv.y, dtv.x);
 
@@ -110,15 +135,15 @@ function Autopilot(positioner) {
 	};
 };
 
-function animate(context) {
+function animate(context, router) {
 
 	if (!Key.isDown(Key.ESC)) {
 		requestAnimationFrame(function() {
-			animate(context);
+			animate(context, router);
 		});
 	}
 
-	redraw(context, o);
+	redraw(context, o, router);
 };
 
 function simulator(autopilot) {
@@ -241,9 +266,12 @@ var Key = {
 
 	context.translate(context.canvas.width / 2 - .5, context.canvas.height / 2 - .5);
 
-	animate(context);
+	var positioner = Positioner();
+	var router = Router(route, positioner);
 
-	var autopilot = Autopilot(Positioner());
+	animate(context, router);
+
+	var autopilot = Autopilot(positioner, router);
 
 	var sim = simulator(autopilot);
 
@@ -252,7 +280,7 @@ var Key = {
 	setInterval(autopilot.tick, 25);
 })();
 
-function redraw(context, o, a) {
+function redraw(context, o, router) {
 
 	document.getElementById("diagnostics").innerHTML = JSON.stringify(diagnostics, undefined, 2);
 
@@ -287,12 +315,14 @@ function redraw(context, o, a) {
 	context.strokeStyle="#0000ff";
 	context.stroke();
 
-	var crp = route[cr];
-	context.beginPath();
-	context.arc(crp.x, crp.y, 5, 0, 2*Math.PI);
-	context.closePath();
-	context.strokeStyle="#ff0000";
-	context.stroke();
+	var currentTarget = router.getCurrentTarget();
+	if (currentTarget) {
+		context.beginPath();
+		context.arc(currentTarget.x, currentTarget.y, 5, 0, 2*Math.PI);
+		context.closePath();
+		context.strokeStyle="#ff0000";
+		context.stroke();
+	}
 
 	context.beginPath();
 	context.moveTo(positions[0].x, positions[0].y);
