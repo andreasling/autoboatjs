@@ -286,12 +286,12 @@ function redraw(context, o, router) {
 
 	context.clearRect(-context.canvas.width/2, -context.canvas.height/2, context.canvas.width, context.canvas.height);
 
-	var drawPosition = {
-		x: o.position.x, // % context.canvas.width,
-		y: o.position.y //% context.canvas.height
+	var position = {
+		x: o.position.x,
+		y: o.position.y
 	};
 
-	positions.push(drawPosition);
+	positions.push(position);
 	if (positions.length > 10000) {
 		positions.shift();
 	};
@@ -333,23 +333,23 @@ function redraw(context, o, router) {
 	context.strokeStyle="#808080";
 	context.stroke();
 
-	context.beginPath();
-	context.moveTo(drawPosition.x, drawPosition.y);
-	context.lineTo(drawPosition.x + o.velocity.x, drawPosition.y + o.velocity.y);
+	/* context.beginPath();
+	context.moveTo(position.x, position.y);
+	context.lineTo(position.x + o.velocity.x, position.y + o.velocity.y);
 	context.strokeStyle="#0000ff";
-	context.stroke();
+	context.stroke(); */
 
 	/* context.beginPath();
-	context.moveTo(drawPosition.x, drawPosition.y);
-	context.lineTo(drawPosition.x + a.x * 10, drawPosition.y + a.y * 10);
+	context.moveTo(position.x, position.y);
+	context.lineTopPosition.x + a.x * 10, position.y + a.y * 10);
 	context.strokeStyle="#ff0000";
 	context.stroke(); */
 
-	context.beginPath();
-	context.arc(drawPosition.x, drawPosition.y, 5, 0, 2*Math.PI);
+	/* context.beginPath();
+	context.arcpPosition.x, position.y, 5, 0, 2*Math.PI);
 	context.closePath();
 	context.strokeStyle="#000000";
-	context.stroke();
+	context.stroke(); */
 
 	var headingVector = {
 		x: Math.cos(o.heading), 
@@ -367,13 +367,13 @@ function redraw(context, o, router) {
 	};
 
 	var backWheelPosition = {
-		x: drawPosition.x - wheelVector.x,
-		y: drawPosition.y - wheelVector.y
+		x: position.x - wheelVector.x,
+		y: position.y - wheelVector.y
 	};
 
 	var frontWheelPosition = {
-		x: drawPosition.x + wheelVector.x,
-		y: drawPosition.y + wheelVector.y
+		x: position.x + wheelVector.x,
+		y: position.y + wheelVector.y
 	};
 
 	bpositions.push(backWheelPosition);
@@ -403,17 +403,25 @@ function redraw(context, o, router) {
 	context.strokeStyle="#e0e0e0";
 	context.stroke();
 
-	context.beginPath();
+	/* context.beginPath();
 	context.moveTo(backWheelPosition.x, backWheelPosition.y);
 	context.lineTo(frontWheelPosition.x, frontWheelPosition.y);
+	context.strokeStyle="#808080";
+	context.stroke(); */
+
+	context.beginPath();
+	context.moveTo(position.x + headingVector.x * 20, position.y + headingVector.y * 20);
+	context.lineTo(position.x - headingVector.x * 20 + headingVector.y * 10, position.y - headingVector.y * 20 - headingVector.x * 10);
+	context.lineTo(position.x - headingVector.x * 20 - headingVector.y * 10, position.y - headingVector.y * 20 + headingVector.x * 10);
+	context.closePath();
 	context.strokeStyle="#808080";
 	context.stroke();
 
 	context.beginPath();
-	context.moveTo(backWheelPosition.x - headingVector.x * 2, backWheelPosition.y - headingVector.y * 2);
-	context.lineTo(backWheelPosition.x + headingVector.x * 2, backWheelPosition.y + headingVector.y * 2);
-	context.moveTo(frontWheelPosition.x - steeringVector.x * 2, frontWheelPosition.y - steeringVector.y * 2);
-	context.lineTo(frontWheelPosition.x + steeringVector.x * 2, frontWheelPosition.y + steeringVector.y * 2);
+	context.moveTo(backWheelPosition.x - headingVector.x * 5, backWheelPosition.y - headingVector.y * 5);
+	context.lineTo(backWheelPosition.x + headingVector.x * 5, backWheelPosition.y + headingVector.y * 5);
+	context.moveTo(frontWheelPosition.x - steeringVector.x * 5, frontWheelPosition.y - steeringVector.y * 5);
+	context.lineTo(frontWheelPosition.x + steeringVector.x * 5, frontWheelPosition.y + steeringVector.y * 5);
 	context.strokeStyle="#000000";
 	context.stroke();
 };
