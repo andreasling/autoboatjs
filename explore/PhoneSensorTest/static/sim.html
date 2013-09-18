@@ -53,6 +53,55 @@ var fpositions = [];
 var t_0 = new Date().getTime();
 var t_prev = new Date().getTime();
 
+function autopilot() {
+
+	var controls = {
+		speed: 0,
+		steerAngle: 0
+	};
+
+	function tick() {
+
+		var PIx2 = 2 * Math.PI;
+		var maxSteer = Math.PI / 4;
+		var minSteer = -maxSteer;
+
+		var ct = route[cr];
+		var dtv = {
+			x: ct.x - o.position.x,
+			y: ct.y - o.position.y
+		};
+
+		var dtl = Math.sqrt(dtv.x * dtv.x + dtv.y * dtv.y);
+
+		if (dtl < 25) {
+			cr = (cr+1)%route.length;
+			return;
+		}
+
+		var dta = Math.atan2(dtv.y, dtv.x);
+
+		var da = dta - o.heading;
+
+		da %= PIx2;
+		if (da > Math.PI) 
+			da -= PIx2;
+		else if (da <= -Math.PI)
+			da += PIx2;
+
+		var sa = da > 0 ? Math.min(da, maxSteer) : Math.max(da, minSteer);
+
+		controls.speed = 10;
+		controls.steerAngle = sa;
+	};
+
+	return {
+		getCurrentSpeed: function() { return controls.speed; },
+		getCurrentSteerAngle: function() { return controls.steerAngle; },
+		tick: tick
+	};
+};
+
 function animate(context) {
 
 	if (!Key.isDown(Key.ESC)) {
@@ -140,55 +189,6 @@ function simulator(autopilot) {
 		tick: tick
 	};
 
-};
-
-function autopilot() {
-
-	var controls = {
-		speed: 0,
-		steerAngle: 0
-	};
-
-	function tick() {
-
-		var PIx2 = 2 * Math.PI;
-		var maxSteer = Math.PI / 4;
-		var minSteer = -maxSteer;
-
-		var ct = route[cr];
-		var dtv = {
-			x: ct.x - o.position.x,
-			y: ct.y - o.position.y
-		};
-
-		var dtl = Math.sqrt(dtv.x * dtv.x + dtv.y * dtv.y);
-
-		if (dtl < 25) {
-			cr = (cr+1)%route.length;
-			return;
-		}
-
-		var dta = Math.atan2(dtv.y, dtv.x);
-
-		var da = dta - o.heading;
-
-		da %= PIx2;
-		if (da > Math.PI) 
-			da -= PIx2;
-		else if (da <= -Math.PI)
-			da += PIx2;
-
-		var sa = da > 0 ? Math.min(da, maxSteer) : Math.max(da, minSteer);
-
-		controls.speed = 10;
-		controls.steerAngle = sa;
-	};
-
-	return {
-		getCurrentSpeed: function() { return controls.speed; },
-		getCurrentSteerAngle: function() { return controls.steerAngle; },
-		tick: tick
-	};
 };
 
 var Key = {
