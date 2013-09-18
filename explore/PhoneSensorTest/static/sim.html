@@ -16,15 +16,10 @@
 var diagnostics = {};
 
 var route = [
-	/*{ x: -300, y: -300 },
+	{ x: -300, y: -300 },
 	{ x: 300, y: -300 },
 	{ x: -300, y: 300 },
-	{ x: 300, y: 300 },*/
-
-	/* bug */
-	{x:50,y:0},
-	{x:-50,y:0}
-
+	{ x: 300, y: 300 },
 ];
 
 var vehicle = {
@@ -99,17 +94,17 @@ function Autopilot(positioner, router) {
 
 		var position = positioner.getCurrentPosition();
 
-		var ct = router.getCurrentTarget();
+		var currentTarget = router.getCurrentTarget();
 
-		if (!ct) {
+		if (!currentTarget) {
 			controls.speed = 0;
 			controls.steerAngle = 0;
 			return;
 		};
 
 		var dtv = {
-			x: ct.x - position.x,
-			y: ct.y - position.y
+			x: currentTarget.x - position.x,
+			y: currentTarget.y - position.y
 		};
 
 		var dta = Math.atan2(dtv.y, dtv.x);
@@ -224,7 +219,7 @@ function simulator(autopilot) {
 			o.steerAngle = Math.max(o.steerAngle - steerAngleSpeed, minSteerAngle, targetSteerAngle);
 		else if (targetSteerAngle > o.steerAngle && o.steerAngle < maxSteerAngle)
 			o.steerAngle = Math.min(o.steerAngle + steerAngleSpeed, maxSteerAngle, targetSteerAngle);
-		
+
 		t_prev = t;
 	};
 
@@ -410,12 +405,6 @@ function redraw(context, o, router) {
 	};
 	context.strokeStyle="#e0e0e0";
 	context.stroke();
-
-	/* context.beginPath();
-	context.moveTo(backWheelPosition.x, backWheelPosition.y);
-	context.lineTo(frontWheelPosition.x, frontWheelPosition.y);
-	context.strokeStyle="#808080";
-	context.stroke(); */
 
 	context.beginPath();
 	context.moveTo(position.x + headingVector.x * 20, position.y + headingVector.y * 20);
