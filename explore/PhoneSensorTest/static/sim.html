@@ -11,6 +11,8 @@
 
 <script type="text/javascript">
 
+"use strict";
+
 var diagnostics = {};
 
 var route = [
@@ -52,8 +54,6 @@ var t_0 = new Date().getTime();
 var t_prev = new Date().getTime();
 
 function animate(context) {
-	//var t = new Date().getTime();
-	//var dt = (t - t_prev) / 1000.0 * 10.0;
 
 	if (!Key.isDown(Key.ESC)) {
 		requestAnimationFrame(function() {
@@ -66,136 +66,130 @@ function animate(context) {
 
 function simulator(autopilot) {
 
-function tick() {
-	var t = new Date().getTime();
-	var dt = (t - t_prev) / 1000.0 * 10.0;
+	function tick() {
+		var t = new Date().getTime();
+		var dt = (t - t_prev) / 1000.0 * 10.0;
 
-	//positions.push(o.position);
+		var headingVector = {
+			x: Math.cos(o.heading), 
+			y: Math.sin(o.heading)
+		};
 
-	/* var dot = {
-		x: o.position.x - target.position.x,
-		y: o.position.y - target.position.y,
+		var steeringVector = {
+			x: Math.cos(o.heading + o.steerAngle), 
+			y: Math.sin(o.heading + o.steerAngle)
+		};
+
+		var wheelVector = {
+			x: o.wheelBase/2 * headingVector.x,
+			y: o.wheelBase/2 * headingVector.y
+		};
+
+		var backWheelPosition = {
+			x: o.position.x - wheelVector.x + o.speed * dt * headingVector.x,
+			y: o.position.y - wheelVector.y + o.speed * dt * headingVector.y
+		};
+
+		var frontWheelPosition = {
+			x: o.position.x + wheelVector.x + o.speed * dt * steeringVector.x,
+			y: o.position.y + wheelVector.y + o.speed * dt * steeringVector.y
+		};
+
+		o.position.x = (frontWheelPosition.x + backWheelPosition.x) / 2;
+		o.position.y = (frontWheelPosition.y + backWheelPosition.y) / 2;
+
+		o.heading = Math.atan2(frontWheelPosition.y - backWheelPosition.y, frontWheelPosition.x - backWheelPosition.x);
+
+		if (autopilot) {
+			var aps = autopilot.getCurrentSpeed();
+			if (!aps && o.speed != 0)
+				o.speed -= (o.speed > 0 ? 0.1 : -0.1);
+			else if (aps > o.speed && o.speed < 10)
+				o.speed += 0.1;
+			else if (aps < o.speed && o.speed > -2)
+				o.speed -= 0.1;
+
+			var apst = autopilot.getCurrentSteerAngle();
+			if (!apst && o.steerAngle != 0)
+				o.steerAngle -= (o.steerAngle > 0 ? (Math.PI / 40 ): -(Math.PI / 40));
+			else if (apst < o.steerAngle && o.steerAngle > -Math.PI / 4)
+				o.steerAngle -= Math.PI / 10;
+			else if (apst > o.steerAngle && o.steerAngle < Math.PI / 4)
+				o.steerAngle += Math.PI / 10;
+
+		} else {
+			if (Key.isDown(Key.UP) && o.speed < 10)
+				o.speed += 0.1;
+			if (Key.isDown(Key.DOWN) && o.speed > -2)
+				o.speed -= 0.1;
+			if (!Key.isDown(Key.UP) && !Key.isDown(Key.DOWN) && o.speed != 0)
+				o.speed -= (o.speed > 0 ? 0.1 : -0.1);
+
+			if (Key.isDown(Key.LEFT) && o.steerAngle > -Math.PI / 4)
+				o.steerAngle -= Math.PI / 10;
+			if (Key.isDown(Key.RIGHT) && o.steerAngle < Math.PI / 4)
+				o.steerAngle += Math.PI / 10;
+			if (!Key.isDown(Key.LEFT) && !Key.isDown(Key.RIGHT) && o.steerAngle != 0)
+				o.steerAngle -= (o.steerAngle > 0 ? (Math.PI / 40 ): -(Math.PI / 40));
+		}
+
+		t_prev = t;
 	};
 
-	var lot = Math.sqrt(dot.x * dot.x + dot.y * dot.y);
-
-	var vot = {
-		x: dot.x / lot,
-		y: dot.y / lot
+	return {
+		tick: tick
 	};
-
-	var acceleration = {
-		x: -vot.x, //o.force.x / o.mass,
-		y: -vot.y //o.force.y / o.mass
-	}; */
-
-	/* var acceleration = {
-		x: 0,
-		y: 0
-	}; */
-
-	/* var dt22 = dt * dt / 2.0;
-
-	o.position.x += o.velocity.x * dt + acceleration.x * dt22;
-	o.position.y += o.velocity.y * dt + acceleration.y * dt22;
-
-	o.velocity.x += acceleration.x * dt;
-	o.velocity.y += acceleration.y * dt; */
-
-
-	var headingVector = {
-		x: Math.cos(o.heading), 
-		y: Math.sin(o.heading)
-	};
-
-	var steeringVector = {
-		x: Math.cos(o.heading + o.steerAngle), 
-		y: Math.sin(o.heading + o.steerAngle)
-	};
-
-	var wheelVector = {
-		x: o.wheelBase/2 * headingVector.x,
-		y: o.wheelBase/2 * headingVector.y
-	};
-
-	var backWheelPosition = {
-		x: o.position.x - wheelVector.x + o.speed * dt * headingVector.x,
-		y: o.position.y - wheelVector.y + o.speed * dt * headingVector.y
-	};
-
-	var frontWheelPosition = {
-		x: o.position.x + wheelVector.x + o.speed * dt * steeringVector.x,
-		y: o.position.y + wheelVector.y + o.speed * dt * steeringVector.y
-	};
-
-	o.position.x = (frontWheelPosition.x + backWheelPosition.x) / 2;
-	o.position.y = (frontWheelPosition.y + backWheelPosition.y) / 2;
-
-	o.heading = Math.atan2(frontWheelPosition.y - backWheelPosition.y, frontWheelPosition.x - backWheelPosition.x);
-
-	/* if (o.position.x > context.canvas.width) 
-		o.position.x = 0;
-
-	if (o.position.x < 0) 
-		o.position.x = context.canvas.width;
-
-	if (o.position.y > context.canvas.height) 
-		o.position.y = 0;
-
-	if (o.position.y < 0) 
-		o.position.y = context.canvas.height; */
-
-	//redraw(context, o, acceleration);
-
-	if (autopilot) {
-		var aps = autopilot.getCurrentSpeed();
-		if (!aps && o.speed != 0)
-			o.speed -= (o.speed > 0 ? 0.1 : -0.1);
-		else if (aps > o.speed && o.speed < 10)
-			o.speed += 0.1;
-		else if (aps < o.speed && o.speed > -2)
-			o.speed -= 0.1;
-
-		var apst = autopilot.getCurrentSteerAngle();
-		if (!apst && o.steerAngle != 0)
-			o.steerAngle -= (o.steerAngle > 0 ? (Math.PI / 40 ): -(Math.PI / 40));
-		else if (apst < o.steerAngle && o.steerAngle > -Math.PI / 4)
-			o.steerAngle -= Math.PI / 10;
-		else if (apst > o.steerAngle && o.steerAngle < Math.PI / 4)
-			o.steerAngle += Math.PI / 10;
-
-	} else {
-		if (Key.isDown(Key.UP) && o.speed < 10)
-			o.speed += 0.1;
-		if (Key.isDown(Key.DOWN) && o.speed > -2)
-			o.speed -= 0.1;
-		if (!Key.isDown(Key.UP) && !Key.isDown(Key.DOWN) && o.speed != 0)
-			o.speed -= (o.speed > 0 ? 0.1 : -0.1);
-
-		if (Key.isDown(Key.LEFT) && o.steerAngle > -Math.PI / 4)
-			o.steerAngle -= Math.PI / 10;
-		if (Key.isDown(Key.RIGHT) && o.steerAngle < Math.PI / 4)
-			o.steerAngle += Math.PI / 10;
-		if (!Key.isDown(Key.LEFT) && !Key.isDown(Key.RIGHT) && o.steerAngle != 0)
-			o.steerAngle -= (o.steerAngle > 0 ? (Math.PI / 40 ): -(Math.PI / 40));
-	}
-
-	t_prev = t;
-};
-
-return {
-	tick: tick
-};
 
 };
 
-/* (function() {
-	var context = document.getElementById("canvas1").getContext("2d");
-	setInterval(function() { 
-		redraw(context, y1); 
-		y1 = (y1 + 1) % 500;
-	}, 17);
-})(); */
+function autopilot() {
+
+	var controls = {
+		speed: 0,
+		steerAngle: 0
+	};
+
+	function tick() {
+
+		var PIx2 = 2 * Math.PI;
+		var maxSteer = Math.PI / 4;
+		var minSteer = -maxSteer;
+
+		var ct = route[cr];
+		var dtv = {
+			x: ct.x - o.position.x,
+			y: ct.y - o.position.y
+		};
+
+		var dtl = Math.sqrt(dtv.x * dtv.x + dtv.y * dtv.y);
+
+		if (dtl < 25) {
+			cr = (cr+1)%route.length;
+			return;
+		}
+
+		var dta = Math.atan2(dtv.y, dtv.x);
+
+		var da = dta - o.heading;
+
+		da %= PIx2;
+		if (da > Math.PI) 
+			da -= PIx2;
+		else if (da <= -Math.PI)
+			da += PIx2;
+
+		var sa = da > 0 ? Math.min(da, maxSteer) : Math.max(da, minSteer);
+
+		controls.speed = 10;
+		controls.steerAngle = sa;
+	};
+
+	return {
+		getCurrentSpeed: function() { return controls.speed; },
+		getCurrentSteerAngle: function() { return controls.steerAngle; },
+		tick: tick
+	};
+};
 
 var Key = {
   _pressed: {},
@@ -217,75 +211,21 @@ var Key = {
   
   onKeyup: function(event) {
     delete this._pressed[event.keyCode];
+  },
+
+  init: function() {
+	window.addEventListener('keyup', function(event) { Key.onKeyup(event); }, false);
+	window.addEventListener('keydown', function(event) { Key.onKeydown(event); }, false);
   }
 };
 
-function autopilot() {
-
-	var controls = {
-		speed: 0,
-		steerAngle: 0
-	};
-
-function tick() {
-
-	var ct = route[cr];
-	var dtv = {
-		x: ct.x - o.position.x,
-		y: ct.y - o.position.y
-	};
-
-	var dtl = Math.sqrt(dtv.x * dtv.x + dtv.y * dtv.y);
-
-	diagnostics.dtv = dtv;
-	diagnostics.dtl = dtl;
-
-	if (dtl < 25) {
-		cr = (cr+1)%route.length;
-		return;
-	}
-
-	var dta = Math.atan2(dtv.y, dtv.x);
-
-	var da = dta - o.heading;
-
-	const PIx2 = 2 * Math.PI;
-	const maxSteer = Math.PI / 4;
-	const minSteer = -maxSteer;
-
-	da %= PIx2;
-	if (da > Math.PI) 
-		da -= PIx2;
-	else if (da <= -Math.PI)
-		da += PIx2;
-
-	var sa = da > 0 ? Math.min(da, maxSteer) : Math.max(da, minSteer);
-
-	controls.speed = 10;
-	controls.steerAngle = sa;
-
-
-	diagnostics.heading = o.heading;
-	diagnostics.dta = dta;
-	diagnostics.da = da;
-	diagnostics.sa = sa;
-};
-
-	return {
-		getCurrentSpeed: function() { return controls.speed; },
-		getCurrentSteerAngle: function() { return controls.steerAngle; },
-		tick: tick
-	};
-};
-
-window.addEventListener('keyup', function(event) { Key.onKeyup(event); }, false);
-window.addEventListener('keydown', function(event) { Key.onKeydown(event); }, false);
-
-document.getElementById("canvas").onclick = function (event) {
-	route.push({x:event.x-400,y:event.y-400});
-};
-
 (function init() {
+
+	Key.init();
+
+	document.getElementById("canvas").onclick = function (event) {
+		route.push({x:event.x-400,y:event.y-400});
+	};
 
 	var context = document.getElementById("canvas").getContext("2d");
 
@@ -300,11 +240,7 @@ document.getElementById("canvas").onclick = function (event) {
 	setInterval(sim.tick, 10);
 
 	setInterval(ap.tick, 25);
-
-	/* setInterval(function() { 
-		console.log(ap.getCurrentSpeed(), ap.getCurrentSteerAngle()); }, 200); */
 })();
-
 
 function redraw(context, o, a) {
 
@@ -441,7 +377,6 @@ function redraw(context, o, a) {
 	context.strokeStyle="#000000";
 	context.stroke();
 };
-
 
 </script>
 
