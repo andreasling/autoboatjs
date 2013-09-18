@@ -53,7 +53,18 @@ var fpositions = [];
 var t_0 = new Date().getTime();
 var t_prev = new Date().getTime();
 
-function autopilot() {
+function Positioner() {
+
+	return { 
+		getCurrentPosition: function() {
+			return o.position;
+		}
+	};
+}
+
+function Autopilot() {
+
+	var positioner = Positioner();
 
 	var controls = {
 		speed: 0,
@@ -66,10 +77,12 @@ function autopilot() {
 		var maxSteer = Math.PI / 4;
 		var minSteer = -maxSteer;
 
+		var position = positioner.getCurrentPosition();
+
 		var ct = route[cr];
 		var dtv = {
-			x: ct.x - o.position.x,
-			y: ct.y - o.position.y
+			x: ct.x - position.x,
+			y: ct.y - position.y
 		};
 
 		var dtl = Math.sqrt(dtv.x * dtv.x + dtv.y * dtv.y);
@@ -233,13 +246,13 @@ var Key = {
 
 	animate(context);
 
-	var ap = autopilot();
+	var autopilot = Autopilot();
 
-	var sim = simulator(ap);
+	var sim = simulator(autopilot);
 
 	setInterval(sim.tick, 10);
 
-	setInterval(ap.tick, 25);
+	setInterval(autopilot.tick, 25);
 })();
 
 function redraw(context, o, a) {
