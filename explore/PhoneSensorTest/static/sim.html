@@ -62,9 +62,7 @@ function Positioner() {
 	};
 }
 
-function Autopilot() {
-
-	var positioner = Positioner();
+function Autopilot(positioner) {
 
 	var controls = {
 		speed: 0,
@@ -246,7 +244,7 @@ var Key = {
 
 	animate(context);
 
-	var autopilot = Autopilot();
+	var autopilot = Autopilot(Positioner());
 
 	var sim = simulator(autopilot);
 
