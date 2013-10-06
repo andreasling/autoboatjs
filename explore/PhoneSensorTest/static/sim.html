@@ -40,6 +40,27 @@ var vehicle = {
 
 var o = vehicle;
 
+var objects = [
+	{
+		mass: 1,
+		position: {
+			x: 100,
+			y: 100
+		},
+		orientation: {
+			a: 0
+		},
+		velocity: {
+			x: 0,
+			y: 0
+		},
+		rotation: {
+			a: Math.PI * 2 / 20
+		},
+		force: 1
+	}
+];
+
 var positions = [];
 var bpositions = [];
 var fpositions = [];
@@ -148,6 +169,26 @@ function simulator(autopilot) {
 	function tick() {
 		var t = new Date().getTime();
 		var dt = (t - t_prev) / 1000.0 * 10.0;
+
+		for (var i = 0; i < objects.length; i++) {
+		 	var object = objects[i];
+
+		 	var force = {
+		 		x: Math.cos(object.orientation.a) * 1,
+		 		y: Math.sin(object.orientation.a) * 1
+		 	};
+
+		 	var acceleration = {
+		 		x: force.x / o.mass,
+		 		y: force.y / o.mass
+		 	};
+
+		 	object.position.x += object.velocity.x * dt + acceleration.x * dt * dt / 2;
+		 	object.position.y += object.velocity.y * dt + acceleration.y * dt * dt / 2;
+		 	object.velocity.x += acceleration.x * dt;
+		 	object.velocity.y += acceleration.y * dt;
+		 	object.orientation.a += object.rotation.a * dt;
+		};
 
 		var headingVector = {
 			x: Math.cos(o.heading), 
@@ -335,6 +376,28 @@ function redraw(context, o, router) {
 	};
 	context.strokeStyle="#808080";
 	context.stroke();
+
+	for (var i = 0; i < objects.length; i++) {
+		var object = objects[i];
+
+		var rv = {
+			x: Math.cos(object.orientation.a),
+			y: Math.sin(object.orientation.a)
+		};
+
+		var pv = {
+			x: rv.x * 20,
+			y: rv.y * 20
+		};
+
+		context.beginPath();
+		context.moveTo(object.position.x - pv.x, object.position.y - pv.y);
+		context.lineTo(object.position.x + pv.y, object.position.y - pv.x);
+		context.lineTo(object.position.x + pv.x, object.position.y + pv.y);
+		context.lineTo(object.position.x - pv.y, object.position.y + pv.x);
+		context.closePath();
+		context.stroke();
+	};
 
 	/* context.beginPath();
 	context.moveTo(position.x, position.y);
