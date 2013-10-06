@@ -10,6 +10,8 @@
 
 var active = false;
 var position = { x: 0, y: 0 };
+var power = 0;
+var angle = 0;
 
 var canvas = document.getElementById("canvas");
 canvas.onmousemove = function(event) {
@@ -23,6 +25,37 @@ canvas.onmouseout = function(event) {
 canvas.onclick = function(event) {
 	active = !active;
 };
+
+try {
+	window.WebSocket = window.WebSocket || window.MozWebSocket;
+	var ws = new WebSocket("ws://192.168.0.8:1337", "echo-protocol");
+
+	ws.addEventListener("message", function(e) {
+		var msg = e.data;
+		console.log(e);
+	});
+
+	var id = setInterval(function() {
+		try {
+
+			if (active) {
+				ws.send(JSON.stringify({ power: power, angle: angle }));
+			};
+
+		} catch(error) {
+			clearInterval(id);
+		}
+	}, 1000);
+
+} catch (error) {
+	alert("web socket error: " + error);
+};
+
+var queue = [];
+
+queue.push({timestamp:new Date().getTime(), type: "loaded", data: {
+	userAgent: navigator.userAgent
+}});
 
 
 function animate(context) {
@@ -53,7 +86,7 @@ function redraw(context) {
 
 	var l = Math.sqrt(dv.x*dv.x + dv.y*dv.y);
 
-	var power = active ? Math.min(Math.max((l - minLimit) / (maxLimit - minLimit), 0), 1) : 0;
+	power = active ? Math.min(Math.max((l - minLimit) / (maxLimit - minLimit), 0), 1) : 0;
 	//console.log(power);
 
 	var v = {
@@ -66,7 +99,7 @@ function redraw(context) {
 		y: v.y * unit
 	};
 
-	var angle = Math.atan2(v.x, -v.y);
+	angle = Math.atan2(v.x, -v.y);
 
 	context.clearRect(0, 0, context.canvas.width, context.canvas.height);
 
