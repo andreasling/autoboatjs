@@ -1,0 +1,134 @@
+<html>
+<head>
+	<title></title>
+</head>
+<body>
+
+<canvas id="canvas" width="500" height="500" style="border: solid black; "></canvas>
+
+<script type="text/javascript">
+
+var active = false;
+var position = { x: 0, y: 0 };
+
+var canvas = document.getElementById("canvas");
+canvas.onmousemove = function(event) {
+	position = { x: event.offsetX, y: event.offsetY };
+};
+
+canvas.onmouseout = function(event) {
+	active = false;
+};
+
+canvas.onclick = function(event) {
+	active = !active;
+};
+
+
+function animate(context) {
+
+	requestAnimationFrame(function() {
+		animate(context);
+	});
+
+	redraw(context);
+};
+
+function redraw(context) {
+
+	var center = {
+		x: context.canvas.width / 2,
+		y: context.canvas.height / 2
+	};
+
+	var unit = center.x;
+
+	var minLimit = unit / 4;
+	var maxLimit = unit / 4 * 3;
+
+	var dv = {
+		x: position.x - center.x,
+		y: position.y - center.y
+	};
+
+	var l = Math.sqrt(dv.x*dv.x + dv.y*dv.y);
+
+	var power = active ? Math.min(Math.max((l - minLimit) / (maxLimit - minLimit), 0), 1) : 0;
+	//console.log(power);
+
+	var v = {
+		x: dv.x / l,
+		y: dv.y / l
+	};
+
+	var uv = {
+		x: v.x * unit,
+		y: v.y * unit
+	};
+
+	var angle = Math.atan2(v.x, -v.y);
+
+	context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+
+	if (active) {
+		context.beginPath();
+		context.arc(center.x, center.y, unit,0,2*Math.PI);
+		context.fillStyle = power < 1 ? "#80ff80" : "#00ff00";
+		context.fill();
+
+		context.beginPath();
+		context.arc(center.x, center.y, maxLimit,0,2*Math.PI);
+		context.fillStyle = (power > 0 && power < 1) ? "#ffff00" : "#ffff80";
+		context.fill();
+
+		context.beginPath();
+		context.arc(center.x, center.y, minLimit,0,2*Math.PI);
+		context.fillStyle = power > 0 ? "#ff8080" : "#ff0000";
+		context.fill();
+
+		context.beginPath();
+		context.moveTo(center.x, center.y);
+		context.lineTo(center.x + uv.x, center.y + uv.y);
+		context.strokeStyle="lightblue";
+		context.lineWidth = 1;
+		context.stroke();
+
+		/* context.beginPath();
+		context.moveTo(center.x + uv.x / 4, center.y + uv.y / 4);
+		context.lineTo(center.x + uv.x / 4 * 3, center.y + uv.y / 4 * 3);
+		context.strokeStyle="lightblue";
+		context.lineWidth = 3;
+		context.stroke(); */
+
+		context.beginPath();
+		context.moveTo(center.x + uv.x / 4, center.y + uv.y / 4);
+		context.lineTo(center.x + uv.x / 4  + uv.x / 2 * power, center.y + uv.y / 4 + uv.y / 2 * power);
+		context.strokeStyle="black";
+		context.lineWidth = 5;
+		context.stroke();
+	} else {
+		context.beginPath();
+		context.arc(center.x, center.y, unit,0,2*Math.PI);
+		context.fillStyle = "silver";
+		context.fill();
+	}
+
+	/* context.beginPath();
+	context.moveTo(center.x + uv.x / 4, center.y + uv.y / 4);
+	context.lineTo(position.x, position.y);
+	context.strokeStyle="black";
+	context.stroke(); */
+
+	context.beginPath();
+	context.font = "20px monospace";
+	context.fillStyle = "black";
+	context.fillText("power: " + (Math.round(power * 100) / 100), 0, 20);
+	context.fillText("angle: " + (Math.round(angle * 100) / 100), 0, 40);
+}
+
+animate(document.getElementById("canvas").getContext("2d"));
+
+</script>
+
+</body>
+</html>
