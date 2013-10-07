@@ -60,7 +60,7 @@ wsServer.on("request", function(r) {
 		// connection.sendUTF(msgString + ", " + new Date().getTime());
 
 		var req = http.request({
-			hostname: "192.168.0.106",
+			hostname: "localhost",
 			port: 8080,
 			path: "/",
 			method: "POST", 
