@@ -1,6 +1,7 @@
 var http = require("http");
 var fs = require("fs");
 var WebSocketServer = require("websocket").server;
+var dgram = require("dgram");
 
 function notFound(res) {
 	res.writeHead(404, {"Content-Type": "text/plain"});
@@ -56,30 +57,15 @@ wsServer.on("request", function(r) {
 		var msgString = message.utf8Data;
 
 		console.log(JSON.parse(msgString));
+		
+		connection.sendUTF(msgString + ", " + new Date().getTime());
 
-		// connection.sendUTF(msgString + ", " + new Date().getTime());
-
-		var req = http.request({
-			hostname: "localhost",
-			port: 8080,
-			path: "/",
-			method: "POST", 
-			headers: {
-				"Content-Length": msgString.length
-			}			
-		}, function(res) {
-			//console.log("status: " + res.statusCode);
-			/* res.on("data", function(data) {
-				console.log(data);
-			}); */
+		var message = new Buffer(msgString);
+		var client = dgram.createSocket("udp4");
+		client.send(message, 0, message.length, 8080, "192.168.0.106", function(err, bytes) {
+			client.close();
+			console.log("datagram sent");
 		});
-
-		req.on("error", function(e) {
-			console.log("error: " + e.message);
-		});
-
-		req.write(msgString);
-		req.end();
 	});
 
 	connection.on("close", function(reasonCode, description) {
@@ -88,36 +74,3 @@ wsServer.on("request", function(r) {
 	});
 
 });
-
-/* var data = JSON.stringify({power:1,angle:0});
-console.log("trying to send...");
-var req = http.request({
-	hostname: 
-		//"localhost", 
-		"192.168.0.106",
-	port: 
-		//1337, 
-		8080,
-	path: "/",
-	method: "POST", 
-	headers: {
-		"Content-Length": data.length//,
-		//"Content-Type": "text/plain"
-	}
-}, function(res) {
-	console.log("status: " + res.statusCode);
-	res.on("data", function(data) {
-		console.log("data: " + data);
-	});
-});
-
-req.on("error", function(e) {
-	console.log("error: " + e.message);
-});
-
-console.log("writing");
-req.write(data);
-console.log("ending");
-req.end();
-console.log("done");
-*/
