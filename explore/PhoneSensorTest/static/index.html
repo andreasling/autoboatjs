@@ -1,17 +1,25 @@
-<html>
+<!DOCTYPE html>
+<html manifest="sensory.appcache">
 <head>
-	<meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0;"/>
 	<title></title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="icon" type="image/png" href="/favicon.png" />
+	<link href="css/bootstrap.min.css" rel="stylesheet" media="screen">
+	<style type="text/css">
+/* body { background-color: black; } */
+	</style>
 </head>
 <body>
-	<button id="user-event">user event</button>
-	<button id="send">send</button>
+	<div id="alert" class="alert alert-danger" style="display: none; "></div>
+	<button id="start" class="btn btn-success">start</button>
+	<button id="stop" class="btn btn-danger">stop</button>
+	<button id="send" class="btn btn-primary">send</button>
+	<button id="user-event" class="btn btn-default">user event</button>
 	<pre id="gps"></pre>
 	<pre id="compass"></pre>
 	<pre id="progress"></pre>
 	<pre id="log"></pre>
-	<button id="stop">stop</button>
-	<input type="button" id="wssend" value="send">
+	<input type="button" id="wssend" value="send" class="btn btn-default">
 	<input type="text" id="message">
 	<div id="chatlog"></div>
 	<script type="text/javascript">
@@ -53,9 +61,30 @@
 		userAgent: navigator.userAgent
 	}});
 
-	function sendToApi(id, data) {
+	function showAlert(message) {
+		var alert = document.getElementById("alert");
+		alert.innerHTML = message;
+		alert.style.display = "";
+		alert.onclick = function() { hideAlert(); };
+	}
+
+	function hideAlert() {
+		var alert = document.getElementById("alert").style.display = "none";
+	}
+
+	function sendToApi(id, data, callback) {
 		try {
 			var xhr = new XMLHttpRequest();
+
+			xhr.onload = function() { 
+				hideAlert();
+				if (callback) { callback(); };
+			}
+
+			xhr.onerror = function() {
+				showAlert("failed to send data!");
+			};
+
 			xhr.open("POST","api/data/" + id, true);
 			xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
 			xhr.send(JSON.stringify(data));
@@ -122,14 +151,12 @@
 		}
 	};
 
-	var log = document.getElementById("log");
 	var progress = document.getElementById("progress");
 	var gps = document.getElementById("gps");
 	var compass = document.getElementById("compass");
-	log.innerHTML = "begin\n";
 
-	var watchId = navigator.geolocation.watchPosition(function(location) { 
-		console.log(location);
+	function positionWatcher(location) { 
+		//console.log(location);
 		var ts = new Date().getTime();
 		queue.push({ 
 			timestamp: ts, 
@@ -139,8 +166,7 @@
 		});
 
 		gps.innerHTML = JSON.stringify(location, undefined, 2);
-	}, null, { enableHighAccuray: true });
-
+	};
 
 	var lastCompassHeading = null;
 	function deviceorientationHandler(e) {
@@ -166,8 +192,6 @@
     		compass.innerHTML = "heading: " + compassHeading;
     	}
 	};
-	window.ondeviceorientation = deviceorientationHandler;
-	//window.addEventListener("deviceorientation", devicemotionHandler, false);
 
 	function devicemotionHandler(e) {
     	var ts = new Date().getTime();
@@ -182,7 +206,6 @@
 			}
     	});
 	};
-	window.ondevicemotion = devicemotionHandler;
 
 	document.getElementById("user-event").onclick = function() {
 		var ts = new Date().getTime();
@@ -191,9 +214,27 @@
 
 	document.getElementById("send").onclick = function() {
 		if (queue.length != 0) {
-			sendToApi("temp", queue);
-			queue.length = 0;
+			sendToApi("temp", queue, function() {
+				queue.length = 0;
+			});
 		}
+	};
+
+	var intervalId = null;
+	var watchId = null;
+	document.getElementById("start").onclick = function() {
+		watchId = navigator.geolocation.watchPosition(positionWatcher, null, { enableHighAccuray: true });
+		window.ondeviceorientation = deviceorientationHandler;
+		//window.addEventListener("deviceorientation", devicemotionHandler, false);
+		window.ondevicemotion = devicemotionHandler;
+
+		intervalId = setInterval(function(){
+
+			progress.innerHTML = "log size: " + queue.length;
+
+			// pingServer();
+
+		},1000);
 	};
 
 	document.getElementById("stop").onclick = function() {
@@ -202,24 +243,6 @@
 		window.ondevicemotion = null;
 		clearInterval(intervalId);
 	};
-
-	log.innerHTML += "added watch\n";
-
-	var intervalId = setInterval(function(){
-
-		progress.innerHTML = "log size: " + queue.length;
-
-		/* if (queue.length != 0) {
-			sendToApi("temp", { q: queue });
-			queue.length = 0;
-		} */
-
-		pingServer();
-
-	},1000);
-
-
-	log.innerHTML += "end\n";
 })();
 	</script>
 </body>

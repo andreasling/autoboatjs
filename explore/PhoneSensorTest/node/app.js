@@ -9,7 +9,46 @@ function notFound(res) {
 
 function getIndex(req, res) {
 	res.writeHead(200, {"Content-Type": "text/html"});
-	var fileStream = fs.createReadStream("C:\\code\\PhoneSensorTest\\static\\index.html");
+	var fileStream = fs.createReadStream("../static/index.html");
+	fileStream.pipe(res);
+};
+
+function getFile(req, res) {
+
+	var url = req.url;
+
+	var path = "../static" + url;
+
+	var contentTypes = [
+		[/\.css$/, "text/css"],
+		[/\.appcache$/, "text/cache-manifest"],
+		[/\.png$/, "image/png"],
+		[undefined, "text/plain"]
+	];
+
+	function getContentType(url) {
+		for (var i = 0; i < contentTypes.length; i++) {
+			var contentType = contentTypes[i]
+
+			if (!contentType[0] || contentType[0].test(url)) {
+				return contentType[1];
+			};
+		};
+	}
+
+	var contentType = /* "text/plain";
+	if (/\.css$/.test(url)) {
+		contentType = "text/css";
+	} else if (/\.appcache$/.test(url)) {
+		contentType = "text/cache-manifest";
+	} */ getContentType(url);
+
+	res.writeHead(200, {"Content-Type": contentType});
+	var fileStream = fs.createReadStream(path);
+	fileStream.on('error', function (error) {
+		res.writeHead(404, {"Content-Type": "text/plain"});
+		res.end("not found: " + error);
+	});
 	fileStream.pipe(res);
 };
 
@@ -55,7 +94,7 @@ function postData(req, res) {
 	});*/
 
 	console.log("writing request data to file");	
-	var fileStream = fs.createWriteStream("log.txt", { "flags": "a" });
+	var fileStream = fs.createWriteStream("log - " + ts + ".txt", { "flags": "a" });
 	fileStream.write("{" + 
 		"\"timestamp\":" + ts + "," + 
 		"\"remoteAddress\":\"" + req.socket.remoteAddress + "\"," +
@@ -85,11 +124,17 @@ function route(req, res) {
 		return;
 	}
 
-	if (/^\/api\/data/.test(url))
+	if (/^\/api\/data/.test(url)) {
 		if (method == "POST") {
 			postData(req, res);
 			return;
 		}
+	}
+
+	if (/^\/css\/|\.appcache$|\.png$/.test(url)) {
+		getFile(req, res);
+		return;
+	}
 
 	notFound(res);
 };
